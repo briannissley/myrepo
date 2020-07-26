@@ -1,0 +1,339 @@
+﻿@using Orion.WebUI.StaticValues.Security
+
+@model Orion.WebUI.Models.HomeViewModel
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="ftsNavbar">
+    <div class="ftsNavbar__logo">
+        <img src="~/VTMLogoSmall.png" alt="Vendor Travel Management" />
+    </div>
+    <a href="#" id="navbartab_Projects" class="ftsNavbar__tab ftsNavbar__tab--active" onclick="fts.togglePageWrappers(this)">Projects</a>
+
+    @if (Model.CurrentSessionData.UserGroupID == UserGroups.companyTravelAdministrator.ID)
+    {
+        <a href="#" id="navbartab_Employees" class="ftsNavbar__tab" onclick="fts.togglePageWrappers(this)">Employees</a>
+    }
+    else
+    {
+        <a href="#" id="navbartab_Vendors" class="ftsNavbar__tab" onclick="fts.togglePageWrappers(this)">Vendors</a>
+    }
+
+    <a href="#" id="navbartab_Reports" class="ftsNavbar__tab" onclick="fts.togglePageWrappers(this)">Reports</a>
+    <div class="ftsNavbar__userMenu">
+        <button class="ftsNavbar__button ftsNavbar__button--dropdown"><span class="k-icon k-i-arrow-chevron-down"></span></button>
+        <div class="ftsNavbar__userMenuContent">
+            <a href="@Url.Action("index", "logout")">Sign Out</a>
+        </div>
+    </div>
+    @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.settingsAccess.ID))
+    {
+        <div class="ftsNavbar__settings">
+            <button class="ftsNavbar__button" onclick="ftsConfig.ftsNavbar.settings_onclick(this)" data-tooltip="Settings"><span class="k-icon k-i-gear"></span></button>
+        </div>
+    }
+    <div class="ftsNavbar__userManual">
+        <button class="ftsNavbar__button" onclick="ftsConfig.ftsNavbar.userManual_onclick(this)" data-tooltip="User Manual"><span class="k-icon k-i-question"></span></button>
+    </div>
+    <div class="ftsToggleSelector" id="toggleselector_Navbar"></div>
+</div>
+<div class="ftsPage">
+    <div class="ftsWrapper ftsWrapper--loading">
+        <div></div>
+        <div></div>
+    </div>
+    <div class="ftsWrapper ftsWrapper--page">
+        <div id="pagewrapper_Projects" class="ftsPageWrapper ftsPageWrapper--active">
+            <div id="gridwrapper_Projects" class="ftsGridWrapper">
+                <div class="ftsToolbar">
+                    @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.createProject.ID))
+                    {
+                        <button class="ftsButton ftsButton--create" id="btn_CreateProject"></button>
+                    }
+                </div>
+                <div id="content_Projects" class="ftsContent">
+                    @Html.Partial("_Grid_Projects")
+                </div>
+            </div>
+            <div id="contentwrapper_Projects" class="ftsContentWrapper">
+                <div class="ftsTabStrip" id="tabstrip_Projects">
+                    <ul>
+                        <li class="k-state-active">Project Assignments</li>
+                        <li>Travel</li>
+                    </ul>
+                    <div class="ftsWrapper">
+                        @if (Model.CurrentSessionData.UserGroupID == UserGroups.companyTravelAdministrator.ID)
+                        {
+                            <div class="ftsToolbar">
+                                <select id="multiselect_AssignEmployeesToProject" class="ftsMultiSelect" style="float: left"></select>
+                                <button class="ftsButton ftsButton--assign" id="btn_CreateEmployeeProjectAssignments"></button>
+                            </div>
+                            <div class="ftsContent">
+                                @Html.Partial("_Grid_EmployeeProjectAssignments")
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="ftsSplitpanel ftsSplitpanel--horizontal">
+                                <div class="ftsSplitpanel__pane">
+                                    <div class="ftsToolbar">
+                                        <input id="ddl_ActiveVendors" class="ftsDropDownList" style="float: left" />
+                                        <button class="ftsButton ftsButton--assign" id="btn_CreateVendorProjectAssignments"></button>
+                                    </div>
+                                    <div class="ftsContent">
+                                        @Html.Partial("_Grid_VendorProjectAssignments")
+                                    </div>
+                                </div>
+                                <div class="ftsSplitpanel__pane">
+                                    <div class="ftsToolbar">
+                                        <select id="multiselect_AssignEmployeesToProject" class="ftsMultiSelect" style="float: left"></select>
+                                        <button class="ftsButton ftsButton--assign" id="btn_CreateEmployeeProjectAssignments"></button>
+                                    </div>
+                                    <div class="ftsContent">
+                                        @Html.Partial("_Grid_EmployeeProjectAssignments")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="ftsWrapper">
+                        @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingCoordinatorReviewGrid.ID) ||
+                            Model.CurrentSessionData.ActionIDs.Contains(Actions.viewAllPendingRequestsGrid.ID) ||
+                            Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingFlightRequestsGrid.ID) ||
+                            Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingLodgingRequestsGrid.ID) ||
+                            Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingTransferRequestsGrid.ID))
+                        {
+                            <div class="ftsTabStrip ftsTabStrip--inverse" id="tabstrip_TravelGrids">
+                                <ul>
+                                    @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingCoordinatorReviewGrid.ID))
+                                    {
+                                        <li class="k-state-active">Pending Coordinator Review <span id="badge_PendingCoordinatorReview" class="badge ftsBadge ftsBadge--noRecords">0</span></li>
+                                    }
+
+                                    @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewAllPendingRequestsGrid.ID) &&
+                                        !Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingCoordinatorReviewGrid.ID))
+                                    {
+                                        <li class="k-state-active">All Pending Requests <span id="badge_AllPendingRequests" class="badge ftsBadge ftsBadge--noRecords">0</span></li>
+                                    }
+                                    else if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewAllPendingRequestsGrid.ID) &&
+                                             Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingCoordinatorReviewGrid.ID))
+                                    {
+                                        <li>All Pending Requests <span id="badge_AllPendingRequests" class="badge ftsBadge ftsBadge--noRecords">0</span></li>
+                                    }
+
+                                    @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingFlightRequestsGrid.ID))
+                                    {
+                                        <li>Pending Flight Requests <span id="badge_PendingFlightRequests" class="badge ftsBadge ftsBadge--noRecords">0</span></li>
+                                    }
+
+                                    @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingLodgingRequestsGrid.ID))
+                                    {
+                                        <li>Pending Hotel Requests <span id="badge_PendingLodgingRequests" class="badge ftsBadge ftsBadge--noRecords">0</span></li>
+                                    }
+
+                                    @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingTransferRequestsGrid.ID))
+                                    {
+                                        <li>Pending Transfer Requests <span id="badge_PendingTransferRequests" class="badge ftsBadge ftsBadge--noRecords">0</span></li>
+                                    }
+                                </ul>
+                                @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingCoordinatorReviewGrid.ID))
+                                {
+                                    <div class="ftsWrapper">
+                                        <div class="ftsToolbar"></div>
+                                        <div class="ftsContent">
+                                            @*<div id="grid_PendingCoordinatorReview"></div>*@
+                                            @Html.Partial("_Grid_PendingCoordinatorReview")
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewAllPendingRequestsGrid.ID))
+                                {
+                                    <div class="ftsWrapper">
+                                        <div class="ftsToolbar"></div>
+                                        <div class="ftsContent">
+                                            @Html.Partial("_Grid_AllPendingRequests")
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingFlightRequestsGrid.ID))
+                                {
+                                    <div class="ftsWrapper">
+                                        <div class="ftsToolbar"></div>
+                                        <div class="ftsContent">
+                                            @Html.Partial("_Grid_PendingFlightRequests")
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingLodgingRequestsGrid.ID))
+                                {
+                                    <div class="ftsWrapper">
+                                        <div class="ftsToolbar"></div>
+                                        <div class="ftsContent">
+                                            <div id="grid_PendingLodgingRequests"></div>
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.viewPendingTransferRequestsGrid.ID))
+                                {
+                                    <div class="ftsWrapper">
+                                        <div class="ftsToolbar"></div>
+                                        <div class="ftsContent">
+                                            @Html.Partial("_Grid_PendingTransferRequests")
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (Model.CurrentSessionData.UserGroupID == UserGroups.companyTravelAdministrator.ID)
+        {
+            <div id="pagewrapper_Employees" class="ftsPageWrapper">
+                <div class="ftsTabStrip" id="tabstrip_EmployeesAndUsers">
+                    <ul>
+                        <li class="k-state-active">Employees</li>
+                        <li>Users</li>
+                    </ul>
+                    <div class="ftsWrapper">
+                        <div class="ftsToolbar">
+                            @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.createEmployee.ID))
+                            {
+                                <button class="ftsButton ftsButton--create" id="btn_CreateEmployee"></button>
+                            }
+                        </div>
+                        <div class="ftsContent">
+                            @Html.Partial("_Grid_Employees")
+                        </div>
+                    </div>
+                    <div class="ftsWrapper">
+                        <div class="ftsToolbar">
+                            @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.createUser.ID))
+                            {
+                                <button class="ftsButton ftsButton--create" id="btn_CreateUser"></button>
+                            }
+                        </div>
+                        <div class="ftsContent">
+                            @Html.Partial("_Grid_Users")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div id="pagewrapper_Vendors" class="ftsPageWrapper">
+                <div class="ftsSplitpanel ftsSplitpanel--horizontal">
+                    <div class="ftsSplitpanel__pane">
+                        <div class="ftsTabStrip" id="tabstrip_Vendors">
+                            <ul>
+                                <li class="k-state-active">Active Vendors</li>
+                            </ul>
+                            <div class="ftsWrapper">
+                                <div class="ftsToolbar">
+                                    @if (Model.CurrentSessionData.ActionIDs.Contains(Actions.createVendor.ID))
+                                    {
+                                        <button id="btn_CreateVendor" class="ftsButton ftsButton--create"></button>
+
+                                    }
+                                    <input id="searchbox_Vendors" class="ftsSearchBox" placeholder="Search Vendors" />
+                                </div>
+                                <div class="ftsContent">
+                                    @Html.Partial("_Grid_Vendors")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ftsSplitpanel__pane">
+                        <div class="ftsWrapper">
+                            <div class="ftsTabStrip" id="tabstrip_EmployeesAndUsers">
+                                <ul>
+                                    <li class="k-state-active">Employees</li>
+                                    <li>Users</li>
+                                </ul>
+                                <div class="ftsWrapper">
+                                    <div class="ftsToolbar">
+                                        <button class="ftsButton ftsButton--create" id="btn_CreateEmployee"></button>
+                                    </div>
+                                    <div class="ftsContent">
+                                        @Html.Partial("_Grid_Employees")
+                                    </div>
+                                </div>
+                                <div class="ftsWrapper">
+                                    <div class="ftsToolbar">
+                                        <button class="ftsButton ftsButton--create" id="btn_CreateUser"></button>
+                                    </div>
+                                    <div class="ftsContent">
+                                        @Html.Partial("_Grid_Users")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div id="pagewrapper_Reports" class="ftsPageWrapper">
+            <div class="ftsToolbar">
+                <table class="ftsTable">
+                    <colgroup>
+                        <col class="col-md-3" />
+                        <col class="col-md-3" />
+                        <col class="col-md-3" />
+                        <col class="col-md-3" />
+                    </colgroup>
+                    <tr>
+                        <td>
+                            <input id="ddl_ReportTypes" class="ftsDropDownList" />
+                        </td>
+                        <td>
+                            <input id="ddl_ReportProjects" class="ftsDropDownList" />
+                        </td>
+                        <td>
+                            <button class="ftsButton ftsButton--search" id="btn_ReportsSearch"></button>
+                        </td>
+                        <td>
+                            <button class="ftsButton ftsButton--export" id="btn_ReportsExport" onclick="orionButtons.btn_ReportsExport.onClick(this)"></button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="ftsContent">
+                @*Report grids go here. Grid shown is based on ddl_ReportTypes selection*@
+                <div class="ftsReportWrapper" id="reportwrapper_ExpiringPassports">
+                    @Html.Partial("_Grid_ReportExpiringPassports")
+                </div>
+                <div class="ftsReportWrapper" id="reportwrapper_Flights">
+                    @Html.Partial("_Grid_ReportFlights")
+                </div>
+                <div class="ftsReportWrapper" id="reportwrapper_HotelRequests">
+                    @Html.Partial("_Grid_ReportHotelRequests")
+                </div>
+                <div class="ftsReportWrapper" id="reportwrapper_TransferRequests">
+                    @Html.Partial("_Grid_ReportTransferRequests")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.Partial("_Window_EmployeeInfo")
+@Html.Partial("_Window_EmployeeProjectAssignment")
+@Html.Partial("_Window_FlightInfo")
+@Html.Partial("_Window_PrivacyStatement")
+@Html.Partial("_Window_ProjectInfo")
+@Html.Partial("_Window_Settings")
+@Html.Partial("_Window_UserInfo")
+@Html.Partial("_Window_VendorInfo")
+
+<script>
+    $(document).ready(function () {
+        currentSessionData = @Html.Raw(Json.Encode(Model));
+    });
+</script>
+
+
